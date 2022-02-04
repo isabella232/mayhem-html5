@@ -2,6 +2,8 @@
 
 HTML5 version of the classic Amiga game Mayhem
 
+Try it on: https://devpack.github.io/mayhem-html5
+
 ----
 
 The original game by [Espen Skoglund](http://hol.abime.net/3853) was born in the early 90s on the Commodore Amiga. That was the great time of MC68000 Assembly.
@@ -33,5 +35,5 @@ Serving HTTP on 0.0.0.0 port 8484 (http://0.0.0.0:8484/) ...
 
 Open in a browser:
 
-http://127.0.0.1:8484/main.html
+http://127.0.0.1:8484/index.html
 

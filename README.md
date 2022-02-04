@@ -33,5 +33,5 @@ Serving HTTP on 0.0.0.0 port 8484 (http://0.0.0.0:8484/) ...
 
 Open in a browser:
 
-http://127.0.0.1:8484/mayhem.html
+http://127.0.0.1:8484/main.html
 

@@ -1,10 +1,33 @@
 <html>
-    <body style="background-color: #1A1A1A;">
 
-        <canvas id="myCanvas" style="border:1px solid #000000;"></canvas>
+    <head>
+        <meta charset="utf-8">
+        <meta name="content" viewport="width=device-width, initial-scale=1">
+
+        <title>Mayhem</title>
+
+        <style>
+            .header-img {
+                width: 322px;
+                height: 102px;
+                background-image: url("assets/default/mayhem_logo.png");
+            }
+        </style>
+             
+        <body style="background-color: #080808;">
+
+            <div style="text-align: center;">
+              <img src="assets/default/mayhem_logo.png" width="310" height="auto">
+            </div>
+                
+            <div style = "text-align:center;">
+                <canvas id="myCanvas" style="border:1px solid #000000;"></canvas>
+            </div>
+
+        </body>  
 
         <script>
-
+//background-size: cover;
             // ------------------------------------------------------------------------------------------------
 
             // Window
@@ -15,8 +38,11 @@
 
             // Player views
 
-            var SHIP1_X = 430;        // ie left
-            var SHIP1_Y = 730;        // ie top
+            //var SHIP1_X = 430;        // ie left
+            //var SHIP1_Y = 730;        // ie top
+
+            var SHIP1_X = 473;        // ie left
+            var SHIP1_Y = 303;        // ie top
 
             var SHIP2_X = 520;        // ie left
             var SHIP2_Y = 955;        // ie top
@@ -56,7 +82,6 @@
             var MAX_SHOOT = 20;
 
             // platforms
-
             var PLATFORMS_1 = [ [ 464, 513, 333 ],
                                 [ 60, 127, 1045 ],
                                 [ 428, 497, 531 ],
@@ -67,6 +92,9 @@
                                 [ 434, 521, 835 ],
                                 [ 499, 586, 1165 ],
                                 [ 68, 145, 1181 ] ];
+
+            // Gamepad
+            const gamepadsByIndex = {};
 
             // ------------------------------------------------------------------------------------------------
 
@@ -336,6 +364,8 @@
 
                     document.addEventListener('keydown', this.key_down_handler.bind(this), false);
                     document.addEventListener('keyup', this.key_up_handler.bind(this), false);
+                    window.addEventListener("gamepadconnected", this.gamepadConnect.bind(this));
+                    window.addEventListener("gamepaddisconnected", this.gamepadDisconnect.bind(this));
 
                     this.ship_1 = new Ship("ship1", this.game, this.game.screen_width, this.game.screen_height, 1, nb_player, SHIP1_X, SHIP1_Y, SHIP_MAX_LIVES);
                     this.ship_2 = new Ship("ship2", this.game, this.game.screen_width, this.game.screen_height, 2, nb_player, SHIP2_X, SHIP2_Y, SHIP_MAX_LIVES);
@@ -438,8 +468,17 @@
                         this.game.window_ctx.lineTo(this.game.screen_width/2, this.game.screen_height);
                         this.game.window_ctx.moveTo(0, this.game.screen_height/2);
                         this.game.window_ctx.lineTo(this.game.screen_width, this.game.screen_height/2);
+                        this.game.window_ctx.moveTo(0, 0);
+                        this.game.window_ctx.lineTo(this.game.screen_width, 0);
+                        this.game.window_ctx.moveTo(this.game.screen_width, 0);
+                        this.game.window_ctx.lineTo(this.game.screen_width, this.game.screen_height);
+                        this.game.window_ctx.moveTo(this.game.screen_width, this.game.screen_height);
+                        this.game.window_ctx.lineTo(0, this.game.screen_height);
+                        this.game.window_ctx.moveTo(0, this.game.screen_height);
+                        this.game.window_ctx.lineTo(0, 0);
+
                         this.game.window_ctx.lineWidth = 1.0;
-                        this.game.window_ctx.strokeStyle = '#ffffff';
+                        this.game.window_ctx.strokeStyle = '#aaaaaa';
                         this.game.window_ctx.stroke();
 
                         // frame count
@@ -498,7 +537,83 @@
                     }
                 }
 
-            }
+                gamepadConnect(e) {
+                    console.log('gamepadConnect', e);
+                    this.addGamepadIfNew(e.gamepad);
+                }
+
+                gamepadDisconnect(e) {
+                    console.log('gamepadDisconnect', e);
+                    this.removeGamepad(e.gamepad);
+                }
+
+                removeGamepad(gamepad) {
+                    console.log('removeGamepad', gamepad);
+
+                    const info = gamepadsByIndex[gamepad.index];
+
+                    if (info) {
+                        delete gamepadsByIndex[gamepad.index];
+                        info.elem.parentElement.removeChild(info.elem);
+                    }
+                }
+
+                addGamepadIfNew(gamepad) {
+                    const info = gamepadsByIndex[gamepad.index];
+
+                    if (!info) {
+                        this.addGamepad(gamepad);
+                    } else {
+                        // This broke sometime in the past. It used to be
+                        // the same gamepad object was returned forever.
+                        // Then Chrome only changed to a new gamepad object
+                        // is returned every frame.
+                        info.gamepad = gamepad;
+                    }
+                }
+
+                addGamepad(gamepad) {
+                    console.log("addGamepad");
+                }
+
+                addNewPads() {
+                    const gamepads = navigator.getGamepads();
+
+                    for (let i = 0; i < gamepads.length; i++) {
+                        const gamepad = gamepads[i]
+                        if (gamepad) {
+                            this.addGamepadIfNew(gamepad);
+                        }
+                    }
+                }
+
+                processController(info) {
+                    const keys = ['index', 'id', 'connected', 'mapping', /*'timestamp'*/];
+
+                    const {elem, gamepad, axes, buttons} = info;
+                    const lines = [`gamepad  : ${gamepad.index}`];
+
+                    for (const key of keys) {
+                        info[key].textContent = gamepad[key];
+                    }
+
+                    axes.forEach(({axis, value}, ndx) => {
+                        const off = ndx * 2;
+                        axis.setAttributeNS(null, 'cx', gamepad.axes[off    ] * fudgeFactor);
+                        axis.setAttributeNS(null, 'cy', gamepad.axes[off + 1] * fudgeFactor);
+                        value.textContent = `${gamepad.axes[off].toFixed(2).padStart(5)},${gamepad.axes[off + 1].toFixed(2).padStart(5)}`;
+                    });
+
+                    buttons.forEach(({circle, value}, ndx) => {
+                        const button = gamepad.buttons[ndx];
+                        circle.setAttributeNS(null, 'r', button.value * fudgeFactor);
+                        circle.setAttributeNS(null, 'fill', button.pressed ? 'red' : 'gray');
+                        value.textContent = `${button.value.toFixed(2)}`;
+                    });
+                }
+
+
+            } // MayhemEnv
 
             // ------------------------------------------------------------------------------------------------
 
@@ -521,7 +636,6 @@
 
                     this.images_assets = {
                         map             : "assets/level1/Mayhem_Level1_Map_256c_alpha.png",
-
                         ship1           : "assets/default/ship1_256c_alpha.png",
                         ship1_thrust    : "assets/default/ship1_thrust_256c_alpha.png",
                         ship2           : "assets/default/ship2_256c_alpha.png",
@@ -675,5 +789,6 @@
             // ------------------------------------------------------------------------------------------------
 
         </script>
-    </body>
+    </head>
+
 </html>

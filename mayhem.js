@@ -64,8 +64,28 @@ var PLATFORMS_1 = [ [ 464, 513, 333 ],
                     [ 499, 586, 1165 ],
                     [ 68, 145, 1181 ] ];
 
-// Gamepad
-const gamepadsByIndex = {};
+// TODO made that editable dynamically
+// Keyboard / Gamepad controls
+const K1_RIGHT  = 88; // x
+const K1_LEFT   = 87; // w
+const K1_THRUST = 86; // v
+const K1_SHIELD = 67; // c
+const K1_SHOOT  = 71; // g
+
+const K2_RIGHT  = 39;  // arrow right
+const K2_LEFT   = 37;  // arrow left
+const K2_THRUST = 110; // . keypad
+const K2_SHIELD = 96;  // 0 keypad
+const K2_SHOOT  = 13;  // enter keypad
+
+const BUTTON_THRUST = 0;
+const BUTTON_SHIELD = 1;
+const BUTTON_SHOOT  = 5;
+const HORIZONTAL_AXIS = 0;
+const HORIZONTAL_RIGHT = 1;
+const HORIZONTAL_LEFT = -1;
+
+const GAMEPADS_DICT = {}; // connected gamepads
 
 // ------------------------------------------------------------------------------------------------
 
@@ -568,14 +588,38 @@ class MayhemEnv {
 
             while(this.accumulated_time < time_stamp) {
                 this.accumulated_time += this.time_step;
+                
+                // Add Gamepads if any connected
+                this.addNewPads();
 
-                // ----- update here
+                // TODO made that editable dynamically
+                // ship control mapping pref: gamepad vs keyboard
+                this.keyboard1_ship = this.ship_1;
+
+                this.gamepad_player_mapping = {};
+                this.gamepad_player_mapping[0] = this.ship_2;
+                this.gamepad_player_mapping[1] = this.ship_3;
+
+                if(Object.keys(GAMEPADS_DICT).length==0) {
+                    this.keyboard2_ship = this.ship_2;
+                }
+                else if (Object.keys(GAMEPADS_DICT).length==1) {
+                    this.keyboard2_ship = this.ship_3;
+                }
+                else if (Object.keys(GAMEPADS_DICT).length==2) {
+                    this.keyboard2_ship = this.ship_4;
+                }
+
+                // gamepad controls
+                this.processGamepads();
+
+                // --- update ship pos
                 for(const ship of this.ships) {
                     ship.update();
                 }
             }
 
-            // ----- render
+            // --- render
 
             // clear
             this.game.window_ctx.clearRect(0, 0, this.game.window.width, this.game.window.height);
@@ -665,75 +709,77 @@ class MayhemEnv {
     } 
 
     key_down_handler(event) {
-        // ship 1
-        if(event.keyCode == 88) {
-            this.ship_1.right_pressed = true;
+
+        // keyboard1 ship
+        if(event.keyCode == K1_RIGHT) {
+            this.keyboard1_ship.right_pressed = true;
         }
-        if(event.keyCode == 87) {
-            this.ship_1.left_pressed = true;
+        if(event.keyCode == K1_LEFT) {
+            this.keyboard1_ship.left_pressed = true;
         }
-        if(event.keyCode == 86) {
-            this.ship_1.thrust_pressed = true;
+        if(event.keyCode == K1_THRUST) {
+            this.keyboard1_ship.thrust_pressed = true;
         }
-        if(event.keyCode == 67) {
-            this.ship_1.shield_pressed = true;
+        if(event.keyCode == K1_SHIELD) {
+            this.keyboard1_ship.shield_pressed = true;
         }
-        if(event.keyCode == 71) {
-            this.ship_1.shoot_pressed = true;
+        if(event.keyCode == K1_SHOOT) {
+            this.keyboard1_ship.shoot_pressed = true;
         }
 
-        // ship 2
-        if(event.keyCode == 39) {
-            this.ship_2.right_pressed = true;
+        // keyboard2 ship
+        if(event.keyCode == K2_RIGHT) {
+            this.keyboard2_ship.right_pressed = true;
         }
-        if(event.keyCode == 37) {
-            this.ship_2.left_pressed = true;
+        if(event.keyCode == K2_LEFT) {
+            this.keyboard2_ship.left_pressed = true;
         }
-        if(event.keyCode == 110) {
-            this.ship_2.thrust_pressed = true;
+        if(event.keyCode == K2_THRUST) {
+            this.keyboard2_ship.thrust_pressed = true;
         }
-        if(event.keyCode == 96) {
-            this.ship_2.shield_pressed = true;
+        if(event.keyCode == K2_SHIELD) {
+            this.keyboard2_ship.shield_pressed = true;
         }
-        if(event.keyCode == 13) {
-            this.ship_2.shoot_pressed = true;
+        if(event.keyCode == K2_SHOOT) {
+            this.keyboard2_ship.shoot_pressed = true;
         }
 
     }
 
     key_up_handler(event) {
-        // ship 1
-        if(event.keyCode == 88) {
-            this.ship_1.right_pressed = false;
+
+        // keyboard1 ship
+        if(event.keyCode == K1_RIGHT) {
+            this.keyboard1_ship.right_pressed = false;
         }
-        if(event.keyCode == 87) {
-            this.ship_1.left_pressed = false;
+        if(event.keyCode == K1_LEFT) {
+            this.keyboard1_ship.left_pressed = false;
         }
-        if(event.keyCode == 86) {
-            this.ship_1.thrust_pressed = false;
+        if(event.keyCode == K1_THRUST) {
+            this.keyboard1_ship.thrust_pressed = false;
         }
-        if(event.keyCode == 67) {
-            this.ship_1.shield_pressed = false;
+        if(event.keyCode == K1_SHIELD) {
+            this.keyboard1_ship.shield_pressed = false;
         }
-        if(event.keyCode == 71) {
-            this.ship_1.shoot_pressed = false;
+        if(event.keyCode == K1_SHOOT) {
+            this.keyboard1_ship.shoot_pressed = false;
         }
 
-        // ship 2
-        if(event.keyCode == 39) {
-            this.ship_2.right_pressed = false;
+        // keyboard2 ship
+        if(event.keyCode == K2_RIGHT) {
+            this.keyboard2_ship.right_pressed = false;
         }
-        if(event.keyCode == 37) {
-            this.ship_2.left_pressed = false;
+        if(event.keyCode == K2_LEFT) {
+            this.keyboard2_ship.left_pressed = false;
         }
-        if(event.keyCode == 110) {
-            this.ship_2.thrust_pressed = false;
+        if(event.keyCode == K2_THRUST) {
+            this.keyboard2_ship.thrust_pressed = false;
         }
-        if(event.keyCode == 96) {
-            this.ship_2.shield_pressed = false;
+        if(event.keyCode == K2_SHIELD) {
+            this.keyboard2_ship.shield_pressed = false;
         }
-        if(event.keyCode == 13) {
-            this.ship_2.shoot_pressed = false;
+        if(event.keyCode == K2_SHOOT) {
+            this.keyboard2_ship.shoot_pressed = false;
         }
     }
 
@@ -750,16 +796,15 @@ class MayhemEnv {
     removeGamepad(gamepad) {
         console.log('removeGamepad', gamepad);
 
-        const info = gamepadsByIndex[gamepad.index];
+        const info = GAMEPADS_DICT[gamepad.index];
 
         if (info) {
-            delete gamepadsByIndex[gamepad.index];
-            info.elem.parentElement.removeChild(info.elem);
+            delete GAMEPADS_DICT[gamepad.index];
         }
     }
 
     addGamepadIfNew(gamepad) {
-        const info = gamepadsByIndex[gamepad.index];
+        const info = GAMEPADS_DICT[gamepad.index];
 
         if (!info) {
             this.addGamepad(gamepad);
@@ -774,6 +819,8 @@ class MayhemEnv {
 
     addGamepad(gamepad) {
         console.log("addGamepad");
+        GAMEPADS_DICT[gamepad.index] = {gamepad};
+
     }
 
     addNewPads() {
@@ -787,29 +834,51 @@ class MayhemEnv {
         }
     }
 
-    processController(info) {
-        const keys = ['index', 'id', 'connected', 'mapping', /*'timestamp'*/];
+    processGamepads() {
+        //console.log("Gamepads=", GAMEPADS_DICT);
 
-        const {elem, gamepad, axes, buttons} = info;
-        const lines = [`gamepad  : ${gamepad.index}`];
+        for (const [gamepad_index, gamepad] of Object.entries(GAMEPADS_DICT)) {
+            let gp      = gamepad.gamepad;
+            let gp_ship = this.gamepad_player_mapping[gamepad_index];
 
-        for (const key of keys) {
-            info[key].textContent = gamepad[key];
+            if(gp.buttons[BUTTON_THRUST].pressed) {
+                gp_ship.thrust_pressed = true;
+            }
+            else {
+                gp_ship.thrust_pressed = false;
+            }
+            if(gp.buttons[BUTTON_SHIELD].pressed) {
+                gp_ship.shield_pressed = true;
+            }
+            else {
+                gp_ship.shield_pressed = false;
+            }
+            if(gp.buttons[BUTTON_SHOOT].pressed) {
+                gp_ship.shoot_pressed = true;
+            }
+            else {
+                gp_ship.shoot_pressed = false;
+            }
+
+            if(gp.axes[HORIZONTAL_AXIS] == HORIZONTAL_RIGHT) {
+                gp_ship.right_pressed = true;
+            }
+            else {
+                gp_ship.right_pressed = false;
+            }
+            if(gp.axes[HORIZONTAL_AXIS] == HORIZONTAL_LEFT) {
+                gp_ship.left_pressed = true;
+            }
+            else {
+                gp_ship.left_pressed = false;
+            }  
+
+            //for(let button_number=0; button_number<gp.buttons.length; button_number++) {
+            //    if(gp.buttons[button_number].pressed)
+            //        console.log("Pressed: ", button_number);
+            //}
+
         }
-
-        axes.forEach(({axis, value}, ndx) => {
-            const off = ndx * 2;
-            axis.setAttributeNS(null, 'cx', gamepad.axes[off    ] * fudgeFactor);
-            axis.setAttributeNS(null, 'cy', gamepad.axes[off + 1] * fudgeFactor);
-            value.textContent = `${gamepad.axes[off].toFixed(2).padStart(5)},${gamepad.axes[off + 1].toFixed(2).padStart(5)}`;
-        });
-
-        buttons.forEach(({circle, value}, ndx) => {
-            const button = gamepad.buttons[ndx];
-            circle.setAttributeNS(null, 'r', button.value * fudgeFactor);
-            circle.setAttributeNS(null, 'fill', button.pressed ? 'red' : 'gray');
-            value.textContent = `${button.value.toFixed(2)}`;
-        });
     }
 
 

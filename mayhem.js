@@ -9,21 +9,6 @@ var DISABLE_SOUND = false;
 
 // Player views
 
-//var SHIP1_X = 430;        // ie left
-//var SHIP1_Y = 730;        // ie top
-
-var SHIP1_X = 473;        // ie left
-var SHIP1_Y = 303;        // ie top
-
-var SHIP2_X = 520;        // ie left
-var SHIP2_Y = 955;        // ie top
-
-var SHIP3_X = 75;         // ie left
-var SHIP3_Y = 1015;       // ie top
-
-var SHIP4_X = 451;        // ie left
-var SHIP4_Y = 501;        // ie top
-
 var FPS     = 120;
 
 var MAP_WIDTH  = 792;
@@ -49,14 +34,14 @@ var iCoeffay = 0.75;
 var iCoeffvx = 0.75;
 var iCoeffvy = 0.75;
 
-var iCoeffimpact = 0.02;
-var MAX_SHOOT = 20;
+var iCoeffimpact = 0.01;
+var MAX_SHOOT = 10;
 
 // platforms
 var PLATFORMS_1 = [ [ 464, 513, 333 ],
+                    [ 504, 568, 985 ],
                     [ 60, 127, 1045 ],
                     [ 428, 497, 531 ],
-                    [ 504, 568, 985 ],
                     [ 178, 241, 875 ],
                     [ 8, 37, 187 ],
                     [ 302, 351, 271 ],
@@ -64,8 +49,51 @@ var PLATFORMS_1 = [ [ 464, 513, 333 ],
                     [ 499, 586, 1165 ],
                     [ 68, 145, 1181 ] ];
 
+var PLATFORMS_2 = [ [ 201, 259, 175 ],
+                    [ 21, 92, 1087 ],
+                    [ 552, 615, 513 ],
+                    [ 468, 525, 915 ],
+                    [ 546, 599, 327 ],
+                    [ 8, 37, 187 ],
+                    [ 660, 697, 447 ],
+                    [ 350, 435, 621 ],
+                    [ 596, 697, 1141 ] ];
+
+var PLATFORMS_3 = [ [ 14, 65, 111 ],
+                    [ 38, 93, 1121 ],
+                    [ 713, 760, 231 ],
+                    [ 473, 540, 617 ],
+                    [ 565, 616, 459 ],
+                    [ 343, 398, 207 ],
+                    [ 316, 385, 805 ],
+                    [ 492, 548, 987 ],
+                    [ 66, 145, 1180 ] ];
+
+var PLATFORMS_4 = [ [ 19, 69, 111 ],
+                    [ 32, 84, 1121 ],
+                    [ 705, 755, 231],
+                    [ 487, 547, 617 ],
+                    [ 556, 607, 459 ],
+                    [ 344, 393, 207 ],
+                    [ 326, 377, 805 ],
+                    [ 502, 554, 987 ],
+                    [ 66, 145, 1180 ] ];
+
+var PLATFORMS_5 = [ [ 504, 568, 985 ],
+                    [ 464, 513, 333 ],
+                    [ 428, 497, 531],
+                    [ 178, 241, 875 ],
+                    [ 8, 37, 187 ],
+                    [ 302, 351, 271 ],
+                    [ 434, 521, 835 ],
+                    [ 434, 521, 835 ],
+                    [ 60, 127, 1045 ],
+                    [ 348, 377, 1089 ],
+                    [ 499, 586, 1165 ],
+                    [ 68, 145, 1181 ] ];
+
 // TODO made that editable dynamically
-// Keyboard / Gamepad controls
+// Keyboard / Gamepad controls (https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API)
 const K1_RIGHT  = 88; // x
 const K1_LEFT   = 87; // w
 const K1_THRUST = 86; // v
@@ -87,6 +115,30 @@ const HORIZONTAL_LEFT = -1;
 
 const GAMEPADS_DICT = {}; // connected gamepads
 
+// preference by order
+var SHIP1_INPUT_CONTROLS = ["online", "keyboard", "gamepad"];
+var SHIP2_INPUT_CONTROLS = ["online", "gamepad", "keyboard"];
+var SHIP3_INPUT_CONTROLS = ["online", "gamepad", "keyboard"];
+var SHIP4_INPUT_CONTROLS = ["online", "gamepad", "keyboard"];
+
+// ------------------------------------------------------------------------------------------------
+
+class Debris {
+
+    constructor() {
+        this.x = 0;
+        this.y = 0;
+        this.xposprecise = 0;
+        this.yposprecise = 0;
+        this.ax = 0;
+        this.ay = 0;
+        this.vx = 0;
+        this.vy = 0;
+        this.impultion = 0;
+        this.angle = 0;
+    }
+}
+
 // ------------------------------------------------------------------------------------------------
 
 class Shot {
@@ -105,7 +157,7 @@ class Shot {
 
 class Ship {
 
-    constructor(ship_name, game, screen_width, screen_height, ship_number, nb_player, xpos, ypos, lives) {
+    constructor(ship_name, game, screen_width, screen_height, ship_number, nb_player, xpos, ypos, platforms, lives) {
 
         let margin_size = 0;
         let w_percent = 1.0;
@@ -117,6 +169,7 @@ class Ship {
         this.ship_name = ship_name;
         this.ship_ctx = this.game.ships_ctx[this.ship_name].getContext('2d');
         this.ship_current_pic = this.ship_name;
+        this.platforms = platforms;
 
         this.view_width  = (screen_width * w_percent) / 2;
         this.view_height = (screen_height * h_percent) / 2;
@@ -172,9 +225,102 @@ class Ship {
         this.explod = false;
         this.shoot_delay = false;
 
-        this.lives = lives;
         this.shots = new Array();
+
+        this.explod_tick = 0;
+        this.debris = new Array();
+
+        this.lives = lives;
     }
+
+    init_debris() {
+        for(let i=0; i<8; i++) {
+            this.debris.push( new Debris() );
+        }
+
+        var deb_angle = 22;
+
+        for(let deb of this.debris) {
+            deb.angle = deb_angle;
+            deb.x = (this.xpos + 15) + 20 * Math.sin(deb.angle * Math.PI / 180);
+            deb.y = (this.ypos + 16) + 20 * -Math.cos(deb.angle * Math.PI / 180);
+            deb.xposprecise = deb.x;
+            deb.yposprecise = deb.y;
+            deb.ax = 0;
+            deb.ay = 0;
+            deb.impultion = 2;
+            deb.vx = 0;
+            deb.vy = 0;
+
+            deb_angle += 45;
+        }
+    }
+
+    explod_sequence() {
+        if (this.explod) {
+            this.game.sounds["thrust" + this.ship_name].stop();
+            this.game.sounds["shoot" + this.ship_name].stop();
+            this.game.sounds["shield" + this.ship_name].stop();
+            this.game.sounds["bounce" + this.ship_name].stop();
+
+            if(this.explod_tick==0) {
+                this.game.sounds["boom" + this.ship_name].play();
+
+                // TODO draw explosion
+
+                this.init_debris();
+            }
+
+            // draw and move debris
+            else {
+
+                this.debris.forEach(function(deb, index, object) {
+
+                    // move debris
+                    deb.ax = deb.impultion * Math.sin(deb.angle * Math.PI / 180);
+                    deb.ay = iG*5 + (deb.impultion * -Math.cos(deb.angle * Math.PI / 180));
+
+                    deb.vx = deb.vx + (iCoeffax * deb.ax);
+                    deb.vy = deb.vy + (iCoeffay * deb.ay);
+
+                    deb.vx = deb.vx * iXfrott;
+                    deb.vy = deb.vy * iYfrott;
+
+                    deb.vx = deb.vx; //+ (this.vx / 100);
+                    deb.vy = deb.vy; //+ (this.vy / 100);
+
+                    deb.xposprecise = deb.xposprecise + (iCoeffvx * deb.vx);// * (dt / 0.025);
+                    deb.yposprecise = deb.yposprecise + (iCoeffvy * deb.vy);// * (dt / 0.025);
+
+                    deb.impultion = 0;
+
+                    // plot debris
+                    deb.x = Math.round(deb.xposprecise);
+                    deb.y = Math.round(deb.yposprecise);             
+                    
+                    var map_pixel = this.game.map_buffer_ctx.getImageData(deb.x, deb.y, 1, 1).data;
+                    let map_pix_is_black = map_pixel[0]==0 && map_pixel[1]==0 && map_pixel[2]==0;
+
+                    if(!map_pix_is_black) {
+                        this.debris.splice(index, 1);
+                    }
+                    else {
+                        this.game.map_buffer_ctx.fillStyle = '#ffffff';
+                        this.game.map_buffer_ctx.fillRect(deb.x, deb.y, 1, 1);
+                    }
+
+
+                }, this)
+            }
+
+            // explosion time
+            this.explod_tick +=1;
+
+            if(this.explod_tick > FPS * 2) {
+                this.reset();
+            }
+        }
+    } 
 
     reset() {
         this.xpos = this.init_xpos;
@@ -200,144 +346,144 @@ class Ship {
         this.explod = false;
         this.shoot_delay = false;
 
-        this.lives -= 1;
+        this.explod_tick = 0;
+        this.debris = new Array();
 
-        this.game.sounds["thrust" + this.ship_name].stop();
-        //this.sound_shoot.stop()
-        //this.sound_shield.stop()
-        this.game.sounds["bounce" + this.ship_name].stop();
-        this.game.sounds["boom" + this.ship_name].play();
+        this.lives -= 1;
     }
 
     update() {
 
-        this.ship_current_pic = this.ship_name;
-        this.thrust = 0.0;
-        this.shield = false;
+        if(!this.explod) {
+            this.ship_current_pic = this.ship_name;
+            this.thrust = 0.0;
+            this.shield = false;
 
-        // shield ?
-        if (this.shield_pressed) {
-            this.ship_current_pic = this.ship_name + "_shield";
-            this.shield = true;
-            this.game.sounds["thrust" + this.ship_name].stop();
-            this.game.sounds["shield" + this.ship_name].play();
-        }
-        else {
-            this.game.sounds["shield" + this.ship_name].stop();
-
-            // thrust ?
-            if (this.thrust_pressed) {
-                this.ship_current_pic = this.ship_name + "_thrust";
-                this.thrust = SHIP_THRUST_MAX;
-                this.landed = false;
-
-                this.game.sounds["thrust" + this.ship_name].play();
+            // shield ?
+            if (this.shield_pressed) {
+                this.ship_current_pic = this.ship_name + "_shield";
+                this.shield = true;
+                this.game.sounds["thrust" + this.ship_name].stop();
+                this.game.sounds["shield" + this.ship_name].play();
             }
             else {
-                this.game.sounds["thrust" + this.ship_name].stop();
-            }
-        }
+                this.game.sounds["shield" + this.ship_name].stop();
 
-        // shoot delay
-        if (this.shoot_pressed && (!this.shoot)) {
-            this.shoot_delay = true;
-        }
-        else {
-            this.shoot_delay = false;
-        }
+                // thrust ?
+                if (this.thrust_pressed) {
+                    this.ship_current_pic = this.ship_name + "_thrust";
+                    this.thrust = SHIP_THRUST_MAX;
+                    this.landed = false;
 
-        // shoot
-        if (this.shoot_pressed) {
-            this.shoot = true;
-
-            if(this.shoot_delay) {
-
-                if (this.shots.length < MAX_SHOOT) {
-                    this.game.sounds["shoot" + this.ship_name].play();
-                    this.add_shots();
-                    //console.log(this.shots);
+                    this.game.sounds["thrust" + this.ship_name].play();
                 }
                 else {
-                    //console.log(this.shots);
+                    this.game.sounds["thrust" + this.ship_name].stop();
                 }
             }
-        }
-        else {
-            this.shoot = false;
-            this.game.sounds["shoot" + this.ship_name].stop();
-        }
 
-        this.bounce = false;
-
-        // not landed
-        if (!this.landed) {
-
-            if (this.right_pressed) {
-                this.angle += SHIP_ANGLESTEP;
+            // shoot delay
+            if (this.shoot_pressed && (!this.shoot)) {
+                this.shoot_delay = true;
             }
-            if (this.left_pressed) {
-                this.angle -= SHIP_ANGLESTEP;
+            else {
+                this.shoot_delay = false;
             }
 
-            this.angle = ((this.angle % 360 ) + 360 ) % 360;
-            //console.log(this.angle);
+            // shoot
+            if (this.shoot_pressed) {
+                this.shoot = true;
 
-            // test simple thrust motion
-            //if (this.thrust_pressed) {
-            //    let coef = 1;
-            //    this.xposprecise += coef * Math.sin( this.angle * Math.PI / 180 );
-            //    this.yposprecise -= coef * Math.cos( this.angle * Math.PI / 180 );
-            //}
+                if(this.shoot_delay) {
 
-            this.ax = this.thrust * Math.sin(this.angle * Math.PI / 180); // ax = thrust * sin1
-            this.ay = iG + (this.thrust * -Math.cos(this.angle * Math.PI / 180)); // ay = g + thrust * (-cos1)
-
-            // shoot when shield is on
-            if (this.impactx || this.impacty) {
-                this.ax += iCoeffimpact * this.impactx;
-                this.ay += iCoeffimpact * this.impacty;
-                this.impactx = 0.0;
-                this.impacty = 0.0;
+                    if (this.shots.length < MAX_SHOOT) {
+                        this.game.sounds["shoot" + this.ship_name].play();
+                        this.add_shots();
+                        //console.log(this.shots);
+                    }
+                    else {
+                        //console.log(this.shots);
+                    }
+                }
+            }
+            else {
+                this.shoot = false;
+                this.game.sounds["shoot" + this.ship_name].stop();
             }
 
-            this.vx = this.vx + (iCoeffax * this.ax); // vx += coeffa * ax
-            this.vy = this.vy + (iCoeffay * this.ay); // vy += coeffa * ay
+            this.bounce = false;
 
-            this.vx = this.vx * iXfrott;
-            this.vy = this.vy * iYfrott;
+            // not landed
+            if (!this.landed) {
 
-            this.xposprecise = this.xposprecise + (iCoeffvx * this.vx); // xpos += coeffv * vx
-            this.yposprecise = this.yposprecise + (iCoeffvy * this.vy); // ypos += coeffv * vy
-        }
+                if (this.right_pressed) {
+                    this.angle += SHIP_ANGLESTEP;
+                }
+                if (this.left_pressed) {
+                    this.angle -= SHIP_ANGLESTEP;
+                }
 
-        // landed
-        else {
-            this.vx = 0.0;
-            this.vy = 0.0;
-            this.ax = 0.0;
-            this.ay = 0.0;
-        }
+                this.angle = ((this.angle % 360 ) + 360 ) % 360;
+                //console.log(this.angle);
 
-        // transfer to screen coordinates
-        this.xpos = Math.round(this.xposprecise);
-        this.ypos = Math.round(this.yposprecise);
-        //this.xpos = Math.floor(this.xposprecise);
-        //this.ypos = Math.floor(this.yposprecise);
+                // test simple thrust motion
+                //if (this.thrust_pressed) {
+                //    let coef = 1;
+                //    this.xposprecise += coef * Math.sin( this.angle * Math.PI / 180 );
+                //    this.yposprecise -= coef * Math.cos( this.angle * Math.PI / 180 );
+                //}
 
-        // landed ?
-        this.is_landed();
+                this.ax = this.thrust * Math.sin(this.angle * Math.PI / 180); // ax = thrust * sin1
+                this.ay = iG + (this.thrust * -Math.cos(this.angle * Math.PI / 180)); // ay = g + thrust * (-cos1)
 
-        // rotate ship (https://stackoverflow.com/questions/32468969/rotating-a-sprite-in-a-canvas)
-        this.ship_ctx.save();
-        this.ship_ctx.clearRect(0, 0, SHIP_SPRITE_SIZE, SHIP_SPRITE_SIZE);
+                // shoot when shield is on
+                if (this.impactx || this.impacty) {
+                    this.ax += iCoeffimpact * this.impactx;
+                    this.ay += iCoeffimpact * this.impacty;
+                    this.impactx = 0.0;
+                    this.impacty = 0.0;
+                }
 
-        this.ship_ctx.translate(SHIP_SPRITE_SIZE/2, SHIP_SPRITE_SIZE/2);
-        this.ship_ctx.rotate(this.angle * Math.PI / 180);
-        this.ship_ctx.translate(-SHIP_SPRITE_SIZE/2, -SHIP_SPRITE_SIZE/2);
+                this.vx = this.vx + (iCoeffax * this.ax); // vx += coeffa * ax
+                this.vy = this.vy + (iCoeffay * this.ay); // vy += coeffa * ay
 
-        this.ship_ctx.drawImage(this.game.images[this.ship_current_pic], 0, 0, this.game.images[this.ship_current_pic].width, this.game.images[this.ship_current_pic].height);
+                this.vx = this.vx * iXfrott;
+                this.vy = this.vy * iYfrott;
 
-        this.ship_ctx.restore();
+                this.xposprecise = this.xposprecise + (iCoeffvx * this.vx); // xpos += coeffv * vx
+                this.yposprecise = this.yposprecise + (iCoeffvy * this.vy); // ypos += coeffv * vy
+            }
+
+            // landed
+            else {
+                this.vx = 0.0;
+                this.vy = 0.0;
+                this.ax = 0.0;
+                this.ay = 0.0;
+            }
+
+            // transfer to screen coordinates
+            this.xpos = Math.round(this.xposprecise);
+            this.ypos = Math.round(this.yposprecise);
+            //this.xpos = Math.floor(this.xposprecise);
+            //this.ypos = Math.floor(this.yposprecise);
+
+            // landed ?
+            this.is_landed();
+
+            // rotate ship (https://stackoverflow.com/questions/32468969/rotating-a-sprite-in-a-canvas)
+            this.ship_ctx.save();
+            this.ship_ctx.clearRect(0, 0, SHIP_SPRITE_SIZE, SHIP_SPRITE_SIZE);
+
+            this.ship_ctx.translate(SHIP_SPRITE_SIZE/2, SHIP_SPRITE_SIZE/2);
+            this.ship_ctx.rotate(this.angle * Math.PI / 180);
+            this.ship_ctx.translate(-SHIP_SPRITE_SIZE/2, -SHIP_SPRITE_SIZE/2);
+
+            this.ship_ctx.drawImage(this.game.images[this.ship_current_pic], 0, 0, this.game.images[this.ship_current_pic].width, this.game.images[this.ship_current_pic].height);
+
+            this.ship_ctx.restore();
+        } // ! explode
+
     }
 
     plot_shots() {
@@ -367,111 +513,122 @@ class Ship {
             }
 
         }, this)
-
-/*                    for shot in list(self.shots): # copy of self.shots
-            shot.xposprecise += shot.dx
-            shot.yposprecise += shot.dy
-            shot.x = int(shot.xposprecise)
-            shot.y = int(shot.yposprecise)
-
-            try:
-                c = map_buffer.get_at((int(shot.x), int(shot.y)))
-                if (c.r != 0) or (c.g != 0) or (c.b != 0):
-                    self.shots.remove(shot)
-
-                pygame.draw.circle(map_buffer, WHITE, (int(shot.x) , int(shot.y)), 1)
-
-            # out of surface
-            except IndexError:
-                self.shots.remove(shot)*/
-
     }
 
     add_shots() {
-        let shot = new Shot();
+        if(!this.explod) {
+            let shot = new Shot();
 
-        shot.x = (this.xpos+15) + 18 * Math.sin(this.angle * Math.PI / 180);
-        shot.y = (this.ypos+16) + 18 * -Math.cos(this.angle * Math.PI / 180);
-        shot.xposprecise = shot.x;
-        shot.yposprecise = shot.y;
-        shot.dx = 5.1 * Math.sin(this.angle * Math.PI / 180);
-        shot.dy = 5.1 * -Math.cos(this.angle * Math.PI / 180);
-        shot.dx += this.vx / 3.5;
-        shot.dy += this.vy / 3.5;
+            shot.x = (this.xpos+15) + 18 * Math.sin(this.angle * Math.PI / 180);
+            shot.y = (this.ypos+16) + 18 * -Math.cos(this.angle * Math.PI / 180);
+            shot.xposprecise = shot.x;
+            shot.yposprecise = shot.y;
+            shot.dx = 5.1 * Math.sin(this.angle * Math.PI / 180);
+            shot.dy = 5.1 * -Math.cos(this.angle * Math.PI / 180);
+            shot.dx += this.vx / 3.5;
+            shot.dy += this.vy / 3.5;
 
-        this.shots.push(shot);
+            this.shots.push(shot);
+        }
     }
 
     draw() {
         // the sequence is update() => collide_map() => draw()
         // blit rotated ship into the map (! only after collision check)
-        this.game.map_buffer_ctx.drawImage(this.game.ships_ctx[this.ship_name], 0, 0, SHIP_SPRITE_SIZE, SHIP_SPRITE_SIZE, this.xpos, this.ypos, SHIP_SPRITE_SIZE, SHIP_SPRITE_SIZE);
+
+        if(!this.explod) {
+            this.game.map_buffer_ctx.drawImage(this.game.ships_ctx[this.ship_name], 0, 0, SHIP_SPRITE_SIZE, SHIP_SPRITE_SIZE, this.xpos, this.ypos, SHIP_SPRITE_SIZE, SHIP_SPRITE_SIZE);            
+        }
     }
 
     collide_map() {
 
-        if(this.do_test_collision()) {
-            var ship_pixels = this.ship_ctx.getImageData(0, 0, SHIP_SPRITE_SIZE, SHIP_SPRITE_SIZE).data;
-            var map_pixels  = this.game.map_buffer_ctx.getImageData(this.xpos, this.ypos, SHIP_SPRITE_SIZE, SHIP_SPRITE_SIZE).data;
-            
-            // 1 dim array: r g b a ...
-            for (let i = 0; i < ship_pixels.length; i += 4) {
-                //let x = (i / 4) % SHIP_SPRITE_SIZE;
-                //var y = Math.floor(Math.floor(i/SHIP_SPRITE_SIZE)/4);
+        if(!this.explod) {
+            if(this.do_test_collision()) {
+                var ship_pixels = this.ship_ctx.getImageData(0, 0, SHIP_SPRITE_SIZE, SHIP_SPRITE_SIZE).data;
+                var map_pixels  = this.game.map_buffer_ctx.getImageData(this.xpos, this.ypos, SHIP_SPRITE_SIZE, SHIP_SPRITE_SIZE).data;
+                
+                // 1 dim array: r g b a ...
+                for (let i = 0; i < ship_pixels.length; i += 4) {
+                    //let x = (i / 4) % SHIP_SPRITE_SIZE;
+                    //var y = Math.floor(Math.floor(i/SHIP_SPRITE_SIZE)/4);
 
-                let map_pix_is_black = map_pixels[i]==0 && map_pixels[i+1]==0 && map_pixels[i+2]==0
+                    let map_pix_is_black = map_pixels[i]==0 && map_pixels[i+1]==0 && map_pixels[i+2]==0
 
-                if( ship_pixels[i+3]==255 && !map_pix_is_black ) {
-                    this.explod = true;
-                    break;
+                    if( ship_pixels[i+3]==255 && !map_pix_is_black ) {
+                        this.explod = true;
+                        break;
+                    }
                 }
             }
         }
+
     }
 
     collide_ship(ships) {
 
         // TODO real pixel perfect collision
-        ships.forEach(function(other_ship) {
-            if(this.ship_number != other_ship.ship_number) {
-                let d = Math.sqrt( Math.pow((this.xpos+16 - (other_ship.xpos+16)), 2) + Math.pow((this.ypos+16 - (other_ship.ypos+16)), 2) );
-                //if(this.ship_number==1 && other_ship.ship_number==2)
-                //    console.log(d);
-                if(d < (SHIP_SPRITE_SIZE-3)) {
-                    this.explod = true;
-                    other_ship.explod = true;
+        if(!this.explod) {
+            ships.forEach(function(other_ship) {
+                if(this.ship_number != other_ship.ship_number) {
+                    let d = Math.sqrt( Math.pow((this.xpos+16 - (other_ship.xpos+16)), 2) + Math.pow((this.ypos+16 - (other_ship.ypos+16)), 2) );
+                    //if(this.ship_number==1 && other_ship.ship_number==2)
+                    //    console.log(d);
+                    if(d < (SHIP_SPRITE_SIZE-3)) {
+                        this.explod = true;
+                        other_ship.explod = true;
+                    }
                 }
-            }
-        }, this)
-
-        //for ship in ships:
-        //    if self != ship:
-        //        offset = ((ship.xpos - self.xpos), (ship.ypos - self.ypos))
-        //        if self.mask.overlap(ship.mask, offset):
-        //            self.explod = True
-        //            ship.explod = True
+            }, this)
+        }
     }
 
-    collide_shots(ships) {
+    collide_shots_and_debris(ships) {
 
         for(const ship of ships) {
             if(this.ship_number != ship.ship_number) {
-                for(const shot of ship.shots) {
 
+                // shots
+                ship.shots.forEach(function(shot, index, object) {
+                    
                     let d = Math.sqrt( Math.pow((this.xpos+16 - shot.x), 2) + Math.pow((this.ypos+16 - shot.y), 2) );
 
                     if(d < (SHIP_SPRITE_SIZE/2)) {
 
                         if (!this.shield) {
                             this.explod = true;
-                            // TODO remove shot from shots
+                            ship.shots.splice(index, 1);
                         }
                         else {
                             this.impactx = shot.dx;
                             this.impacty = shot.dy;
                         }
                     }
+
+                }, this)
+
+                // not explosed yet ? check debris
+                if(!this.explod) {
+
+                    ship.debris.forEach(function(deb, index, object) {
+                        
+                        let d = Math.sqrt( Math.pow((this.xpos+16 - deb.x), 2) + Math.pow((this.ypos+16 - deb.y), 2) );
+
+                        if(d < (SHIP_SPRITE_SIZE/2)) {
+
+                            if (!this.shield) {
+                                this.explod = true;
+                                ship.debris.splice(index, 1);
+                            }
+                            else {
+                                this.impactx = deb.dx;
+                                this.impacty = deb.dy;
+                            }
+                        }
+
+                    }, this)
                 }
+
             }
         }
 
@@ -480,7 +637,7 @@ class Ship {
     do_test_collision() {
         let test_it = true
 
-        for(const plaform of PLATFORMS_1) {
+        for(const plaform of this.platforms) {
             let xmin  = plaform[0] - (SHIP_SPRITE_SIZE - 23);
             let xmax  = plaform[1] - (SHIP_SPRITE_SIZE - 9);
             let yflat = plaform[2] - (SHIP_SPRITE_SIZE - 2);
@@ -501,7 +658,7 @@ class Ship {
 
     is_landed() {
 
-        for(const plaform of PLATFORMS_1) {
+        for(const plaform of this.platforms) {
             let xmin  = plaform[0] - (SHIP_SPRITE_SIZE - 23);
             let xmax  = plaform[1] - (SHIP_SPRITE_SIZE - 9);
             let yflat = plaform[2] - (SHIP_SPRITE_SIZE - 2);
@@ -548,28 +705,60 @@ class MayhemEnv {
         window.addEventListener("gamepadconnected", this.gamepadConnect.bind(this));
         window.addEventListener("gamepaddisconnected", this.gamepadDisconnect.bind(this));
 
-        this.ship_1 = new Ship("ship1", this.game, this.game.screen_width, this.game.screen_height, 1, nb_player, SHIP1_X, SHIP1_Y, SHIP_MAX_LIVES);
-        this.ship_2 = new Ship("ship2", this.game, this.game.screen_width, this.game.screen_height, 2, nb_player, SHIP2_X, SHIP2_Y, SHIP_MAX_LIVES);
-        this.ship_3 = new Ship("ship3", this.game, this.game.screen_width, this.game.screen_height, 3, nb_player, SHIP3_X, SHIP3_Y, SHIP_MAX_LIVES);
-        this.ship_4 = new Ship("ship4", this.game, this.game.screen_width, this.game.screen_height, 4, nb_player, SHIP4_X, SHIP4_Y, SHIP_MAX_LIVES);
+        this.set_level(1);
+
+        this.frames = 0;
+
+        window.requestAnimationFrame(this.main_loop.bind(this));
+    }
+
+    set_level(level) {
+        CURRENT_LEVEL = level;
+
+        if(level==1) {
+            var platforms = PLATFORMS_1;      
+        }
+        else if(level==2) {
+            var platforms = PLATFORMS_2;            
+        }
+        else if(level==3) {
+            var platforms = PLATFORMS_3;            
+        }
+        else if(level==4) {
+            var platforms = PLATFORMS_4;            
+        }
+        else if(level==5) {
+            var platforms = PLATFORMS_5;            
+        }
+
+        var SHIP1_X = (platforms[0][0] + platforms[0][1])/2 - 16 // xpos = (plats->xmin + plats->xmax) / 2 - 16;
+        var SHIP1_Y = platforms[0][2] -29                    // ypos = plats->yflat - 29;
+        var SHIP2_X = (platforms[1][0] + platforms[1][1])/2 - 16
+        var SHIP2_Y = platforms[1][2] -29
+        var SHIP3_X = (platforms[2][0] + platforms[2][1])/2 - 16
+        var SHIP3_Y = platforms[2][2] -29
+        var SHIP4_X = (platforms[3][0] + platforms[3][1])/2 - 16
+        var SHIP4_Y = platforms[3][2] -29
+
+        this.ship_1 = new Ship("ship1", this.game, this.game.screen_width, this.game.screen_height, 1, this.nb_player, SHIP1_X, SHIP1_Y, platforms, SHIP_MAX_LIVES);
+        this.ship_2 = new Ship("ship2", this.game, this.game.screen_width, this.game.screen_height, 2, this.nb_player, SHIP2_X, SHIP2_Y, platforms, SHIP_MAX_LIVES);
+        this.ship_3 = new Ship("ship3", this.game, this.game.screen_width, this.game.screen_height, 3, this.nb_player, SHIP3_X, SHIP3_Y, platforms, SHIP_MAX_LIVES);
+        this.ship_4 = new Ship("ship4", this.game, this.game.screen_width, this.game.screen_height, 4, this.nb_player, SHIP4_X, SHIP4_Y, platforms, SHIP_MAX_LIVES);
 
         this.ships = new Array();
         
         this.ships.push(this.ship_1);
 
-        if (nb_player >= 2) {
+        if (this.nb_player >= 2) {
             this.ships.push(this.ship_2)
         }
-        if (nb_player >= 3) {
+        if (this.nb_player >= 3) {
             this.ships.push(this.ship_3)
         }
-        if (nb_player >= 4) {
+        if (this.nb_player >= 4) {
             this.ships.push(this.ship_4)
         }
 
-        this.frames = 0;
-
-        window.requestAnimationFrame(this.main_loop.bind(this));
     }
 
     main_loop(time_stamp) {
@@ -622,10 +811,10 @@ class MayhemEnv {
             // --- render
 
             // clear
-            this.game.window_ctx.clearRect(0, 0, this.game.window.width, this.game.window.height);
+            //this.game.window_ctx.clearRect(0, 0, this.game.window.width, this.game.window.height);
 
             // draw map into its canvas buffer
-            this.game.map_buffer_ctx.drawImage(this.game.images["map"], 0, 0, MAP_WIDTH, MAP_HEIGHT, 0, 0, MAP_WIDTH, MAP_HEIGHT);
+            this.game.map_buffer_ctx.drawImage(this.game.images["map" + CURRENT_LEVEL], 0, 0, MAP_WIDTH, MAP_HEIGHT, 0, 0, MAP_WIDTH, MAP_HEIGHT);
 
             // collision map
             for(const ship of this.ships) {
@@ -642,14 +831,19 @@ class MayhemEnv {
                 ship.plot_shots();
             }, this)
 
-            // collide shots
+            // collide shots and debris
             this.ships.forEach(function(ship) {
-                ship.collide_shots(this.ships);
+                ship.collide_shots_and_debris(this.ships);
             }, this)
 
             // draw ship
             this.ships.forEach(function(ship) {
                 ship.draw();
+            })
+
+            // explode ?
+            this.ships.forEach(function(ship) {
+                ship.explod_sequence();
             })
 
             // clipping to avoid black when the ship is close to the edges
@@ -674,13 +868,6 @@ class MayhemEnv {
                 //void ctx.drawImage(image, sx, sy, sLargeur, sHauteur, dx, dy, dLargeur, dHauteur);
                 this.game.window_ctx.drawImage(this.game.map_buffer, rx, ry, ship.view_width, ship.view_height, ship.view_left, ship.view_top, ship.view_width, ship.view_height);
             }, this)
-
-            // reset on explode
-            this.ships.forEach(function(ship) {
-                if (ship.explod) {
-                    ship.reset();
-                }
-            })
 
             // Split screen
             this.game.window_ctx.beginPath();
@@ -709,6 +896,22 @@ class MayhemEnv {
     } 
 
     key_down_handler(event) {
+        // level
+        if(event.keyCode == 49) {
+            this.set_level(1);
+        }      
+        else if (event.keyCode == 50) {
+            this.set_level(2);
+        }       
+        else if (event.keyCode == 51) {
+            this.set_level(3);
+        }       
+        else if (event.keyCode == 52) {
+            this.set_level(4);
+        }       
+        else if (event.keyCode == 53) {
+            this.set_level(5);
+        }       
 
         // keyboard1 ship
         if(event.keyCode == K1_RIGHT) {
@@ -904,7 +1107,11 @@ class GameWindow {
         this.window_ctx    = this.window.getContext('2d');
 
         this.images_assets = {
-            map             : "assets/level1/Mayhem_Level1_Map_256c_alpha.png",
+            map1            : "assets/level1/Mayhem_Level1_Map_256c_alpha.png",
+            map2            : "assets/level2/Mayhem_Level2_Map_256c_alpha.png",
+            map3            : "assets/level3/Mayhem_Level3_Map_256c_alpha.png",
+            map4            : "assets/level4/Mayhem_Level4_Map_256c_alpha.png",
+            map5            : "assets/level5/Mayhem_Level5_Map_256c_alpha.png",
             ship1           : "assets/default/ship1_256c_alpha.png",
             ship1_thrust    : "assets/default/ship1_thrust_256c_alpha.png",
             ship1_shield    : "assets/default/ship1_shield_256c_alpha.png",

@@ -94,17 +94,17 @@ var PLATFORMS_5 = [ [ 504, 568, 985 ],
 
 // TODO made that editable dynamically
 // Keyboard / Gamepad controls (https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API)
-const K1_RIGHT  = 88; // x
-const K1_LEFT   = 87; // w
-const K1_THRUST = 86; // v
-const K1_SHIELD = 67; // c
-const K1_SHOOT  = 71; // g
+const K1_RIGHT  = "KeyX";
+const K1_LEFT   = "KeyZ";
+const K1_THRUST = "KeyV";
+const K1_SHIELD = "KeyC";
+const K1_SHOOT  = "KeyG";
 
-const K2_RIGHT  = 39;  // arrow right
-const K2_LEFT   = 37;  // arrow left
-const K2_THRUST = 110; // . keypad
-const K2_SHIELD = 96;  // 0 keypad
-const K2_SHOOT  = 13;  // enter keypad
+const K2_RIGHT  = "ArrowRight";
+const K2_LEFT   = "ArrowLeft";
+const K2_THRUST = "NumpadDecimal";
+const K2_SHIELD = "Numpad0";
+const K2_SHOOT  = "NumpadEnter";
 
 const BUTTON_THRUST = 0;
 const BUTTON_SHIELD = 1;
@@ -286,8 +286,8 @@ class Ship {
                     deb.vx = deb.vx * iXfrott;
                     deb.vy = deb.vy * iYfrott;
 
-                    deb.vx = deb.vx; //+ (this.vx / 100);
-                    deb.vy = deb.vy; //+ (this.vy / 100);
+                    deb.vx = deb.vx;// + (this.vx / 50);
+                    deb.vy = deb.vy;// + (this.vy / 100);
 
                     deb.xposprecise = deb.xposprecise + (iCoeffvx * deb.vx);// * (dt / 0.025);
                     deb.yposprecise = deb.yposprecise + (iCoeffvy * deb.vy);// * (dt / 0.025);
@@ -468,6 +468,32 @@ class Ship {
             //this.xpos = Math.floor(this.xposprecise);
             //this.ypos = Math.floor(this.yposprecise);
 
+            if(CURRENT_LEVEL==1) {
+                if (this.ypos <= 160 && this.xpos >= 174 & this.xpos <= 184) {
+                    this.xpos = 344;
+                    this.ypos = 1052;
+                    this.xposprecise = this.xpos;
+                    this.yposprecise = this.ypos;
+                  }
+                  if (1053 <= this.ypos && this.xpos >= 339 && this.xpos <= 349) {
+                    this.xpos = 179;
+                    this.ypos = 165;
+                    this.xposprecise = this.xpos;
+                    this.yposprecise = this.ypos;
+                  }
+            }
+            else if (CURRENT_LEVEL==5) {
+                // wrap horizontally
+                if (this.xpos > MAP_WIDTH) {
+                    this.xpos = 0;
+                    this.xposprecise = this.xpos;
+                }
+                else if (this.xpos < 0) {
+                    this.xpos = MAP_WIDTH;
+                    this.xposprecise = this.xpos;
+                }
+            }
+
             // landed ?
             this.is_landed();
 
@@ -586,9 +612,11 @@ class Ship {
     collide_shots_and_debris(ships) {
 
         for(const ship of ships) {
+
+            // all other ships but current
             if(this.ship_number != ship.ship_number) {
 
-                // shots
+                // shots check
                 ship.shots.forEach(function(shot, index, object) {
                     
                     let d = Math.sqrt( Math.pow((this.xpos+16 - shot.x), 2) + Math.pow((this.ypos+16 - shot.y), 2) );
@@ -607,7 +635,7 @@ class Ship {
 
                 }, this)
 
-                // not explosed yet ? check debris
+                // not explosed yet => debris check
                 if(!this.explod) {
 
                     ship.debris.forEach(function(deb, index, object) {
@@ -897,53 +925,53 @@ class MayhemEnv {
 
     key_down_handler(event) {
         // level
-        if(event.keyCode == 49) {
+        if(event.code == "Digit1") {
             this.set_level(1);
         }      
-        else if (event.keyCode == 50) {
+        else if (event.code == "Digit2") {
             this.set_level(2);
         }       
-        else if (event.keyCode == 51) {
+        else if (event.code == "Digit3") {
             this.set_level(3);
         }       
-        else if (event.keyCode == 52) {
+        else if (event.code == "Digit4") {
             this.set_level(4);
         }       
-        else if (event.keyCode == 53) {
+        else if (event.code == "Digit5") {
             this.set_level(5);
         }       
 
         // keyboard1 ship
-        if(event.keyCode == K1_RIGHT) {
+        if(event.code == K1_RIGHT) {
             this.keyboard1_ship.right_pressed = true;
         }
-        if(event.keyCode == K1_LEFT) {
+        if(event.code == K1_LEFT) {
             this.keyboard1_ship.left_pressed = true;
         }
-        if(event.keyCode == K1_THRUST) {
+        if(event.code == K1_THRUST) {
             this.keyboard1_ship.thrust_pressed = true;
         }
-        if(event.keyCode == K1_SHIELD) {
+        if(event.code == K1_SHIELD) {
             this.keyboard1_ship.shield_pressed = true;
         }
-        if(event.keyCode == K1_SHOOT) {
+        if(event.code == K1_SHOOT) {
             this.keyboard1_ship.shoot_pressed = true;
         }
 
         // keyboard2 ship
-        if(event.keyCode == K2_RIGHT) {
+        if(event.code == K2_RIGHT) {
             this.keyboard2_ship.right_pressed = true;
         }
-        if(event.keyCode == K2_LEFT) {
+        if(event.code == K2_LEFT) {
             this.keyboard2_ship.left_pressed = true;
         }
-        if(event.keyCode == K2_THRUST) {
+        if(event.code == K2_THRUST) {
             this.keyboard2_ship.thrust_pressed = true;
         }
-        if(event.keyCode == K2_SHIELD) {
+        if(event.code == K2_SHIELD) {
             this.keyboard2_ship.shield_pressed = true;
         }
-        if(event.keyCode == K2_SHOOT) {
+        if(event.code == K2_SHOOT) {
             this.keyboard2_ship.shoot_pressed = true;
         }
 
@@ -952,36 +980,36 @@ class MayhemEnv {
     key_up_handler(event) {
 
         // keyboard1 ship
-        if(event.keyCode == K1_RIGHT) {
+        if(event.code == K1_RIGHT) {
             this.keyboard1_ship.right_pressed = false;
         }
-        if(event.keyCode == K1_LEFT) {
+        if(event.code == K1_LEFT) {
             this.keyboard1_ship.left_pressed = false;
         }
-        if(event.keyCode == K1_THRUST) {
+        if(event.code == K1_THRUST) {
             this.keyboard1_ship.thrust_pressed = false;
         }
-        if(event.keyCode == K1_SHIELD) {
+        if(event.code == K1_SHIELD) {
             this.keyboard1_ship.shield_pressed = false;
         }
-        if(event.keyCode == K1_SHOOT) {
+        if(event.code == K1_SHOOT) {
             this.keyboard1_ship.shoot_pressed = false;
         }
 
         // keyboard2 ship
-        if(event.keyCode == K2_RIGHT) {
+        if(event.code == K2_RIGHT) {
             this.keyboard2_ship.right_pressed = false;
         }
-        if(event.keyCode == K2_LEFT) {
+        if(event.code == K2_LEFT) {
             this.keyboard2_ship.left_pressed = false;
         }
-        if(event.keyCode == K2_THRUST) {
+        if(event.code == K2_THRUST) {
             this.keyboard2_ship.thrust_pressed = false;
         }
-        if(event.keyCode == K2_SHIELD) {
+        if(event.code == K2_SHIELD) {
             this.keyboard2_ship.shield_pressed = false;
         }
-        if(event.keyCode == K2_SHOOT) {
+        if(event.code == K2_SHOOT) {
             this.keyboard2_ship.shoot_pressed = false;
         }
     }

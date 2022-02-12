@@ -9,17 +9,17 @@ var DISABLE_SOUND = false;
 
 // Player views
 
-var FPS     = 120;
+var FPS = 120;
 
 var MAP_WIDTH  = 792;
 var MAP_HEIGHT = 1200;
 
 // Ship dynamics
 
-var SHIP_MAX_LIVES = 10;
+var SHIP_MAX_LIVES   = 10;
 var SHIP_SPRITE_SIZE = 32;
 
-var SHIP_ANGLESTEP = 2.4;
+var SHIP_ANGLESTEP  = 2.4;
 var SHIP_ANGLE_LAND = 24;
 var LANDED_SLOW_DOWN_COEF = 4.0;
 
@@ -109,9 +109,12 @@ const K2_SHOOT  = "NumpadEnter";
 const BUTTON_THRUST = 0;
 const BUTTON_SHIELD = 1;
 const BUTTON_SHOOT  = 5;
-const HORIZONTAL_AXIS = 0;
+const HORIZONTAL_AXIS  = 0;
 const HORIZONTAL_RIGHT = 1;
-const HORIZONTAL_LEFT = -1;
+const HORIZONTAL_LEFT  = -1;
+const VERTICAL_AXIS    = 1;
+const VERTICAL_DOWN    = 1;
+const VERTICAL_UP      = -1;
 
 const GAMEPADS_DICT = {}; // connected gamepads
 
@@ -1083,12 +1086,28 @@ class MayhemEnv {
             }
             else {
                 gp_ship.shield_pressed = false;
+
+                // for one button joystick, up is fire, down is shield
+                if(gp.axes[VERTICAL_AXIS] == VERTICAL_DOWN) {
+                    gp_ship.shield_pressed = true;
+                }
+                else {
+                    gp_ship.shield_pressed = false;
+                }  
             }
             if(gp.buttons[BUTTON_SHOOT].pressed) {
                 gp_ship.shoot_pressed = true;
             }
             else {
                 gp_ship.shoot_pressed = false;
+
+                // for one button joystick, up is fire, down is shield
+                if(gp.axes[VERTICAL_AXIS] == VERTICAL_UP) {
+                    gp_ship.shoot_pressed = true;
+                }
+                else {
+                    gp_ship.shoot_pressed = false;
+                }
             }
 
             if(gp.axes[HORIZONTAL_AXIS] == HORIZONTAL_RIGHT) {

@@ -1286,6 +1286,8 @@ class GameWindow {
                     
                 }.bind(this);
 
+                let is_FF = (navigator.userAgent.indexOf("Firefox") != -1);
+                
                 // trying a gapless loop for looping sounds
                 //if (this.sounds_assets[key].includes("loop") && !this.sounds_assets[key].includes("shield")) {
                 if (this.sounds_assets[key].includes("loop") ) {
@@ -1297,7 +1299,9 @@ class GameWindow {
 
                             if(this.currentTime > this.duration - buffer){
                                 this.currentTime = 0;
-                                this.play();
+                                if(!is_FF) {
+                                    this.play();
+                                }
                             }
                         });
                     }
@@ -1308,7 +1312,9 @@ class GameWindow {
 
                             if(this.currentTime > this.duration - buffer){
                                 this.currentTime = 0;
-                                this.play();
+                                if(!is_FF) {
+                                    this.play();
+                                }
                             }
                         });
                     }

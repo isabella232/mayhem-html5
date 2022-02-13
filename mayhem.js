@@ -32,8 +32,8 @@ var LANDED_SLOW_DOWN_COEF = 4.0;
 
 var SHIP_THRUST_MAX = 0.035;
 var iG       = 0.01 ;
-var iXfrott  = 0.995;
-var iYfrott  = 0.995;
+var iXfrott  = 0.994;
+var iYfrott  = 0.994;
 var iCoeffax = 0.75;
 var iCoeffay = 0.75;
 var iCoeffvx = 0.75;

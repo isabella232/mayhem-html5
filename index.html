@@ -11,6 +11,24 @@
         <script src="mayhem.js"></script>
 
         <style>
+            a:link {
+            color: #727c7e;
+            background-color: transparent;
+            text-decoration: underline;
+            }
+
+            a:visited {
+            color: #727c7e;
+            background-color: transparent;
+            text-decoration: none;
+            }
+
+            a:hover {
+            color: #727c7e;
+            background-color: transparent;
+            text-decoration: underline;
+            }
+
             body, html {
                 width: 100%;
                 height: 100%;
@@ -25,23 +43,24 @@
 
             .toppane {
                 width: 100%;
-                height: auto;
+                height: 102px; /* 102px logo height */
                 border-collapse: collapse;
                 background-color: #080808;
                 text-align: center;
             }
 
             .leftpane {
-                width: 15%;
-                height: 100%;
+                width: 25%;
+                height: calc(100% - 152px); /* 102px logo height + 50 px bottom padding*/
                 float: left;
-                /* background-color: rosybrown; */
-                background-color: #000000;
+                background-color: #080808;
                 border-collapse: collapse;
+                text-align: center;
+                padding: 0 0 50px 0;
 
                 opacity:0;
-                transition:all 0s;
-                color: rgb(114, 124, 126);
+                transition:all 0.3s;
+                color: #727c7e;
             }
 
             .leftpane:hover {
@@ -51,39 +70,40 @@
             }
 
             .middlepane {
-                width: 70%;
-                height: 100%;
+                width: 50%;
+                height: calc(100% - 152px); /* 102px logo height + 50 px bottom padding*/
+                /* height: 100%; */
                 float: left;
-                background-color: #000000;
+                background-color: #080808;
                 border-collapse: collapse;
                 cursor:none;
                 text-align: center;
+                padding: 0 0 50px 0;
+            }
+
+            .mycanvas {
+                width: 100%;
+                height: 100%;
             }
 
             .rightpane {
-                width: 15%;
-                height: 100%;
+                width: 25%;
+                height: calc(100% - 152px); /* 102px logo height + 50 px bottom padding*/
                 position: relative;
                 float: right;
-                /* background-color: yellow; */
-                background-color: #000000;
+                background-color: #080808;
                 border-collapse: collapse;
+                text-align: center;
+                padding: 0 0 50px 0;
 
                 opacity:0;
-                transition:all 0s;
-                color: rgb(114, 124, 126);
+                transition:all 0.3s; 
+                color: #727c7e;
             }
 
             .rightpane:hover {
-                /* display: block; */
                 opacity:1;
             }
-
-            /* .header-img {
-                width: 322px;
-                height: 102px;
-                background-image: url("assets/default/mayhem_logo.png");
-            } */
 
         </style>
              
@@ -94,11 +114,13 @@
         <div class="container">
 
             <div class="toppane">
-                <img src="assets/default/mayhem_logo.png" width="310" height="auto">
+                <img src="assets/default/mayhem_logo.png" width="322" height="102">
             </div>
       
             <div class="leftpane">
-                <!-- <h1>Left Pane</h1> -->
+                <p>Remake of the classic Amiga game: <a href="https://hol.abime.net/3853" target="_blank">Mayhem</a></p>
+                <br>
+
                 <p>Controls:</p>
                 <p>- w (z), x, c, v, g</p>
                 <p>- left, right, 0, ., enter</p>
@@ -108,11 +130,13 @@
             </div>
 
             <div class="middlepane">
-                <canvas id="mainGameCanvas"></canvas>
+                <canvas class="mycanvas" id="mainGameCanvas"></canvas>
             </div>
 
             <div class="rightpane">
-                <!-- <h1>Right Pane</h1> -->
+                <p>Remake of the classic Amiga game: <a href="https://hol.abime.net/3853" target="_blank">Mayhem</a></p>
+                <br>
+
                 <p>Controls:</p>
                 <p>- w (z), x, c, v, g</p>
                 <p>- left, right, 0, ., enter</p>
@@ -120,10 +144,6 @@
                 <p>- joystick 2</p>
                 <p>- 1 to 5: change map</p>
             </div>
-
-            <!-- <div style="text-align:center;">
-                <canvas id="mainGameCanvas" style="cursor:none; background-color: #000000;"></canvas>
-            </div> -->
 
         </div>
 

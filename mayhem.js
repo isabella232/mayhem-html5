@@ -2,9 +2,14 @@
 var CURRENT_LEVEL = 1;
 var NB_PLAYER = 4;
 
-// Window
-var WINDOW_WIDTH  = 1024;
-var WINDOW_HEIGHT = 768;
+// Canvas fixed size
+//var WINDOW_WIDTH  = 1024;
+//var WINDOW_HEIGHT = 768;
+
+// Canvas dynamic size based on the html element size
+var WINDOW_WIDTH  = -1; //1024;
+var WINDOW_HEIGHT = -1; //768;
+
 var DISABLE_SOUND = false;
 
 // Player views
@@ -1149,9 +1154,26 @@ class GameWindow {
         //document.body.appendChild(this.window);
 
         this.window = document.getElementById('mainGameCanvas');
-        this.window.width  = screen_width;
-        this.window.height = screen_height;
+
+        // canvas size depends on the html element size
+        if(this.screen_width==-1 || this.screen_height==-1) {
+            const c_size = this.window.getBoundingClientRect();
+
+            this.screen_width  = c_size.width;
+            this.screen_height = c_size.height;
+    
+            this.window.width  = this.screen_width;
+            this.window.height = this.screen_height;
+        }
+        // fixed size of the canvas in px
+        else {
+            this.window.classList.remove("mycanvas");
+            this.window.width  = this.screen_width;
+            this.window.height = this.screen_height
+        }
+
         this.window_ctx    = this.window.getContext('2d');
+        this.window_ctx.imageSmoothingEnabled = false;
 
         this.images_assets = {
             map1            : "assets/level1/Mayhem_Level1_Map_256c_alpha.png",
@@ -1174,9 +1196,10 @@ class GameWindow {
         };
 
         this.map_buffer = document.createElement('canvas');
-        this.map_buffer.width = MAP_WIDTH;
+        this.map_buffer.width  = MAP_WIDTH;
         this.map_buffer.height = MAP_HEIGHT;
         this.map_buffer_ctx = this.map_buffer.getContext('2d');
+        this.map_buffer_ctx.imageSmoothingEnabled = false;
 
         this.images = {};
         this.ships_ctx = {}; // each image has its own context

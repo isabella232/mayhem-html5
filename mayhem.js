@@ -25,10 +25,10 @@ var LANDED_SLOW_DOWN_COEF = 4.0;
 
 //var SHIP_MASS = 0.9;
 
-var SHIP_THRUST_MAX = 0.04;
+var SHIP_THRUST_MAX = 0.035;
 var iG       = 0.01 ;
-var iXfrott  = 0.99;
-var iYfrott  = 0.99;
+var iXfrott  = 0.995;
+var iYfrott  = 0.995;
 var iCoeffax = 0.75;
 var iCoeffay = 0.75;
 var iCoeffvx = 0.75;
@@ -251,7 +251,7 @@ class Ship {
             deb.yposprecise = deb.y;
             deb.ax = 0;
             deb.ay = 0;
-            deb.impultion = 2;
+            deb.impultion = 4;
             deb.vx = 0;
             deb.vy = 0;
 

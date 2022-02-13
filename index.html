@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 
     <head>
@@ -10,23 +11,120 @@
         <script src="mayhem.js"></script>
 
         <style>
-            .header-img {
+            body, html {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+            }
+
+            .container {
+                width: 100%;
+                height: 100%;
+                background-color: #080808;
+            }
+
+            .toppane {
+                width: 100%;
+                height: auto;
+                border-collapse: collapse;
+                background-color: #080808;
+                text-align: center;
+            }
+
+            .leftpane {
+                width: 15%;
+                height: 100%;
+                float: left;
+                /* background-color: rosybrown; */
+                background-color: #000000;
+                border-collapse: collapse;
+
+                opacity:0;
+                transition:all 0s;
+                color: rgb(114, 124, 126);
+            }
+
+            .leftpane:hover {
+                /* display: block; */
+                /* color: rgb(114, 124, 126); */
+                opacity:1;
+            }
+
+            .middlepane {
+                width: 70%;
+                height: 100%;
+                float: left;
+                background-color: #000000;
+                border-collapse: collapse;
+                cursor:none;
+                text-align: center;
+            }
+
+            .rightpane {
+                width: 15%;
+                height: 100%;
+                position: relative;
+                float: right;
+                /* background-color: yellow; */
+                background-color: #000000;
+                border-collapse: collapse;
+
+                opacity:0;
+                transition:all 0s;
+                color: rgb(114, 124, 126);
+            }
+
+            .rightpane:hover {
+                /* display: block; */
+                opacity:1;
+            }
+
+            /* .header-img {
                 width: 322px;
                 height: 102px;
                 background-image: url("assets/default/mayhem_logo.png");
-            }
+            } */
+
         </style>
              
     </head>
 
-    <body style="background-color: #080808;">
+    <body>
 
-        <div style="text-align: center; background-color: #080808;">
-          <img src="assets/default/mayhem_logo.png" width="310" height="auto">
-        </div>
-            
-        <div style="text-align:center;">
-            <canvas id="mainGameCanvas" style="cursor:none; background-color: #000000;"></canvas>
+        <div class="container">
+
+            <div class="toppane">
+                <img src="assets/default/mayhem_logo.png" width="310" height="auto">
+            </div>
+      
+            <div class="leftpane">
+                <!-- <h1>Left Pane</h1> -->
+                <p>Controls:</p>
+                <p>- w (z), x, c, v, g</p>
+                <p>- left, right, 0, ., enter</p>
+                <p>- joystick 1</p>
+                <p>- joystick 2</p>
+                <p>- 1 to 5: change map</p>
+            </div>
+
+            <div class="middlepane">
+                <canvas id="mainGameCanvas"></canvas>
+            </div>
+
+            <div class="rightpane">
+                <!-- <h1>Right Pane</h1> -->
+                <p>Controls:</p>
+                <p>- w (z), x, c, v, g</p>
+                <p>- left, right, 0, ., enter</p>
+                <p>- joystick 1</p>
+                <p>- joystick 2</p>
+                <p>- 1 to 5: change map</p>
+            </div>
+
+            <!-- <div style="text-align:center;">
+                <canvas id="mainGameCanvas" style="cursor:none; background-color: #000000;"></canvas>
+            </div> -->
+
         </div>
 
     </body>  

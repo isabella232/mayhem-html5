@@ -272,7 +272,7 @@ class Ship {
             this.game.sounds["bounce" + this.ship_name].stop();
 
             if(this.explod_tick==0) {
-                this.game.sounds["boom" + this.ship_name].play();
+                this.play_sound(this.game.sounds["boom" + this.ship_name]);
 
                 // TODO draw explosion
 
@@ -360,6 +360,18 @@ class Ship {
         this.lives -= 1;
     }
 
+    play_sound(sound) {
+        let promise = sound.play();
+
+        if (promise !== undefined) {
+            promise.then(_ => {
+                // here play is ok
+            }).catch(error => {
+                // here play failed
+            });
+        }
+    }
+
     update() {
 
         if(!this.explod) {
@@ -372,7 +384,7 @@ class Ship {
                 this.ship_current_pic = this.ship_name + "_shield";
                 this.shield = true;
                 this.game.sounds["thrust" + this.ship_name].stop();
-                this.game.sounds["shield" + this.ship_name].play();
+                this.play_sound(this.game.sounds["shield" + this.ship_name]);
             }
             else {
                 this.game.sounds["shield" + this.ship_name].stop();
@@ -383,7 +395,7 @@ class Ship {
                     this.thrust = SHIP_THRUST_MAX;
                     this.landed = false;
 
-                    this.game.sounds["thrust" + this.ship_name].play();
+                    this.play_sound(this.game.sounds["thrust" + this.ship_name]);
                 }
                 else {
                     this.game.sounds["thrust" + this.ship_name].stop();
@@ -405,7 +417,7 @@ class Ship {
                 if(this.shoot_delay) {
 
                     if (this.shots.length < MAX_SHOOT) {
-                        this.game.sounds["shoot" + this.ship_name].play();
+                        this.play_sound(this.game.sounds["shoot" + this.ship_name]);
                         this.add_shots();
                         //console.log(this.shots);
                     }
@@ -715,7 +727,7 @@ class Ship {
                 }
                 else {
                     this.bounce = true;
-                    this.game.sounds["bounce" + this.ship_name].play();
+                    this.play_sound(this.game.sounds["bounce" + this.ship_name]);
                 }
 
                 return true;
@@ -1257,73 +1269,81 @@ class GameWindow {
 
         for (const ship of ship_names) {
 
-            for (let key in this.sounds_assets) {
-                this.sounds[key + ship] = new Audio();
+            try {
+                for (let key in this.sounds_assets) {
 
-                // onload
-                this.sounds[key + ship].onloadeddata = function() {    
-
-                    if (++nb_loaded_sounds >= nb_sounds * nb_ships) {
-                        console.log("Sounds loaded");
-                        callback();
-                    }
-                };
-                
-                // onerror
-                this.sounds[key + ship].onerror = function() {
-                    alert("Failed to load sounds, check console output for details");
-                };
-
-                // onplay
-                this.sounds[key + ship].onplay = function() {
-
-                    if(DISABLE_SOUND) {
-                        this.sounds[key + ship].muted = true;
-                    }
-                    else {
-                        this.sounds[key + ship].muted = false;
-                    }
+                    this.sounds[key + ship] = new Audio();
+    
+                    // onload
+                    this.sounds[key + ship].onloadeddata = function() {    
+    
+                        if (++nb_loaded_sounds >= nb_sounds * nb_ships) {
+                            console.log("Sounds loaded");
+                            callback();
+                        }
+                    };
                     
-                }.bind(this);
-
-                let is_FF = (navigator.userAgent.indexOf("Firefox") != -1);
-                
-                // trying a gapless loop for looping sounds
-                //if (this.sounds_assets[key].includes("loop") && !this.sounds_assets[key].includes("shield")) {
-                if (this.sounds_assets[key].includes("loop") ) {
-
-                    if (this.sounds_assets[key].includes("shield") ) {
-                        this.sounds[key + ship].addEventListener('timeupdate', function() {
-                            
-                            var buffer = .34;
-
-                            if(this.currentTime > this.duration - buffer){
-                                this.currentTime = 0;
-                                if(!is_FF) {
-                                    this.play();
+                    // onerror
+                    this.sounds[key + ship].onerror = function() {
+                        console.log("Failed to load sounds", key);
+                        nb_loaded_sounds++;
+                    };
+    
+                    // onplay
+                    this.sounds[key + ship].onplay = function() {
+    
+                        if(DISABLE_SOUND) {
+                            this.sounds[key + ship].muted = true;
+                        }
+                        else {
+                            this.sounds[key + ship].muted = false;
+                        }
+                        
+                    }.bind(this);
+    
+                    let is_FF = (navigator.userAgent.indexOf("Firefox") != -1);
+    
+                    // trying a gapless loop for looping sounds
+                    //if (this.sounds_assets[key].includes("loop") && !this.sounds_assets[key].includes("shield")) {
+                    if (this.sounds_assets[key].includes("loop") ) {
+    
+                        if (this.sounds_assets[key].includes("shield") ) {
+                            this.sounds[key + ship].addEventListener('timeupdate', function() {
+                                
+                                var buffer = .34;
+    
+                                if(this.currentTime > this.duration - buffer){
+                                    this.currentTime = 0;
+                                    if(!is_FF) {
+                                        this.play();
+                                    }
                                 }
-                            }
-                        });
-                    }
-                    else {
-                        this.sounds[key + ship].addEventListener('timeupdate', function() {
-                            
-                            var buffer = .44;
-
-                            if(this.currentTime > this.duration - buffer){
-                                this.currentTime = 0;
-                                if(!is_FF) {
-                                    this.play();
+                            });
+                        }
+                        else {
+                            this.sounds[key + ship].addEventListener('timeupdate', function() {
+                                
+                                var buffer = .44;
+    
+                                if(this.currentTime > this.duration - buffer){
+                                    this.currentTime = 0;
+                                    if(!is_FF) {
+                                        this.play();
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
+    
                     }
+    
+                    this.sounds[key + ship].src = this.sounds_assets[key];
+    
+                } // for all sound assets
+            } catch (error) {
+                console.log("Failed to load", key);
+                nb_loaded_sounds++;
+            }
 
-                }
-
-                this.sounds[key + ship].src = this.sounds_assets[key];
-
-            } // for all sound assets
         } // for all ships
 
     } 

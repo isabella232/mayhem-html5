@@ -131,6 +131,18 @@ var SHIP4_INPUT_CONTROLS = ["online", "gamepad", "keyboard"];
 
 // ------------------------------------------------------------------------------------------------
 
+function print(s) {
+    console.log(s);
+}
+
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// ------------------------------------------------------------------------------------------------
+
 class Debris {
 
     constructor() {
@@ -273,15 +285,29 @@ class Ship {
 
             if(this.explod_tick==0) {
                 this.play_sound(this.game.sounds["boom" + this.ship_name]);
-
-                // TODO draw explosion
-
                 this.init_debris();
             }
 
             // draw and move debris
             else {
 
+                // drax explosion
+                let ship_cx = this.xpos + SHIP_SPRITE_SIZE/2;
+                let ship_cy = this.ypos + SHIP_SPRITE_SIZE/2;
+
+                let c = (255 - this.explod_tick).toString(16);
+                this.game.map_buffer_ctx.fillStyle = '#'+c+c+c;
+
+                for(let p=0; p < (240 - this.explod_tick)/4; p++) {
+                    let r = (32-(this.explod_tick*2)) * Math.sqrt(Math.random());
+                    let theta = Math.random() * 2 * Math.PI;
+                    let x = r * Math.cos(theta);
+                    let y = r * Math.sin(theta);
+
+                    this.game.map_buffer_ctx.fillRect(ship_cx + x, ship_cy + y, 1, 1);
+                }
+                
+                // debris
                 this.debris.forEach(function(deb, index, object) {
 
                     // move debris
@@ -315,8 +341,8 @@ class Ship {
                     else {
                         this.game.map_buffer_ctx.fillStyle = '#ffffff';
                         this.game.map_buffer_ctx.fillRect(deb.x, deb.y, 1, 1);
+                        //this.game.map_buffer_ctx.fillRect(deb.x, deb.y, getRandomInt(1,2), getRandomInt(1,1));
                     }
-
 
                 }, this)
             }

@@ -1302,7 +1302,6 @@ class GameWindow {
     
                     // onload
                     this.sounds[key + ship].onloadeddata = function() {    
-    
                         if (++nb_loaded_sounds >= nb_sounds * nb_ships) {
                             console.log("Sounds loaded");
                             callback();
@@ -1363,7 +1362,8 @@ class GameWindow {
                     }
     
                     this.sounds[key + ship].src = this.sounds_assets[key];
-    
+                    this.sounds[key + ship].volume = 0.2;
+
                 } // for all sound assets
             } catch (error) {
                 console.log("Failed to load", key);
